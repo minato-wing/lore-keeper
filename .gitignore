@@ -1,0 +1,14 @@
+# Backend
+backend/.env
+backend/tmp/
+
+# Frontend
+frontend/.env.local
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+
+# General
+*.log
+.DS_Store
+.pnpm-store
