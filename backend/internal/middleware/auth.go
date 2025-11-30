@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -10,6 +11,12 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip authentication for OPTIONS requests (CORS preflight)
+		if c.Request.Method == "OPTIONS" {
+			c.Next()
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "missing authorization header"})
@@ -24,14 +31,18 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		user, err := database.Client.Auth.User(c.Request.Context(), token)
+		// Use WithToken to authenticate the request
+		authClient := database.Client.Auth.WithToken(token)
+		user, err := authClient.GetUser()
 		if err != nil {
+			log.Printf("Auth error: %v", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			c.Abort()
 			return
 		}
 
-		c.Set("user_id", user.ID)
+		log.Printf("Authenticated user: %s", user.ID.String())
+		c.Set("user_id", user.ID.String())
 		c.Next()
 	}
 }

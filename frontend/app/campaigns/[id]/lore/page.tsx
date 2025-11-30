@@ -5,8 +5,9 @@ import { useParams } from 'next/navigation'
 import { api, LoreEntry } from '@/lib/api'
 import Link from 'next/link'
 import { ArrowLeft, Plus, AlertTriangle } from 'lucide-react'
+import AuthGuard from '@/components/AuthGuard'
 
-export default function LorePage() {
+function LoreContent() {
   const params = useParams()
   const campaignId = params.id as string
   const [loreEntries, setLoreEntries] = useState<LoreEntry[]>([])
@@ -261,5 +262,14 @@ export default function LorePage() {
         )}
       </div>
     </div>
+  )
+}
+
+
+export default function LorePage() {
+  return (
+    <AuthGuard>
+      <LoreContent />
+    </AuthGuard>
   )
 }

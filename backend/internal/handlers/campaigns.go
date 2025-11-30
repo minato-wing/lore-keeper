@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/minato-wing/lore-keeper/backend/internal/database"
 	"github.com/minato-wing/lore-keeper/backend/internal/models"
+	"github.com/minato-wing/lore-keeper/backend/pkg/utils"
 )
 
 type CampaignHandler struct{}
@@ -15,17 +16,17 @@ func NewCampaignHandler() *CampaignHandler {
 }
 
 func (h *CampaignHandler) GetCampaigns(c *gin.Context) {
-	userID := c.GetString("user_id")
-	if userID == "" {
+	userID, exists := utils.GetUserID(c)
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	var campaigns []models.Campaign
-	_, err := database.Client.DB.From("campaigns").
+	_, err := database.Client.From("campaigns").
 		Select("*", "", false).
 		Eq("user_id", userID).
-		Execute(&campaigns)
+		ExecuteTo(&campaigns)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -37,15 +38,19 @@ func (h *CampaignHandler) GetCampaigns(c *gin.Context) {
 
 func (h *CampaignHandler) GetCampaign(c *gin.Context) {
 	id := c.Param("id")
-	userID := c.GetString("user_id")
+	userID, exists := utils.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
 	var campaign models.Campaign
-	_, err := database.Client.DB.From("campaigns").
+	_, err := database.Client.From("campaigns").
 		Select("*", "", false).
 		Eq("id", id).
 		Eq("user_id", userID).
 		Single().
-		Execute(&campaign)
+		ExecuteTo(&campaign)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "campaign not found"})
@@ -56,8 +61,8 @@ func (h *CampaignHandler) GetCampaign(c *gin.Context) {
 }
 
 func (h *CampaignHandler) CreateCampaign(c *gin.Context) {
-	userID := c.GetString("user_id")
-	if userID == "" {
+	userID, exists := utils.GetUserID(c)
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
@@ -75,9 +80,9 @@ func (h *CampaignHandler) CreateCampaign(c *gin.Context) {
 	}
 
 	var result []models.Campaign
-	_, err := database.Client.DB.From("campaigns").
+	_, err := database.Client.From("campaigns").
 		Insert(campaign, false, "", "", "").
-		Execute(&result)
+		ExecuteTo(&result)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -94,7 +99,11 @@ func (h *CampaignHandler) CreateCampaign(c *gin.Context) {
 
 func (h *CampaignHandler) UpdateCampaign(c *gin.Context) {
 	id := c.Param("id")
-	userID := c.GetString("user_id")
+	userID, exists := utils.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
 	var req models.CreateCampaignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,11 +117,11 @@ func (h *CampaignHandler) UpdateCampaign(c *gin.Context) {
 	}
 
 	var result []models.Campaign
-	_, err := database.Client.DB.From("campaigns").
+	_, err := database.Client.From("campaigns").
 		Update(update, "", "").
 		Eq("id", id).
 		Eq("user_id", userID).
-		Execute(&result)
+		ExecuteTo(&result)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -129,13 +138,17 @@ func (h *CampaignHandler) UpdateCampaign(c *gin.Context) {
 
 func (h *CampaignHandler) DeleteCampaign(c *gin.Context) {
 	id := c.Param("id")
-	userID := c.GetString("user_id")
+	userID, exists := utils.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
-	_, err := database.Client.DB.From("campaigns").
+	_, _, err := database.Client.From("campaigns").
 		Delete("", "").
 		Eq("id", id).
 		Eq("user_id", userID).
-		Execute(nil)
+		Execute()
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

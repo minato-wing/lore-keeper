@@ -5,8 +5,9 @@ import { useParams } from 'next/navigation'
 import { api, Character } from '@/lib/api'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Sparkles } from 'lucide-react'
+import AuthGuard from '@/components/AuthGuard'
 
-export default function CharactersPage() {
+function CharactersContent() {
   const params = useParams()
   const campaignId = params.id as string
   const [characters, setCharacters] = useState<Character[]>([])
@@ -240,5 +241,14 @@ export default function CharactersPage() {
         )}
       </div>
     </div>
+  )
+}
+
+
+export default function CharactersPage() {
+  return (
+    <AuthGuard>
+      <CharactersContent />
+    </AuthGuard>
   )
 }

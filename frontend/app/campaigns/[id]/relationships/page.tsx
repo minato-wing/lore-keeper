@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { api, Character, Relationship } from '@/lib/api'
 import Link from 'next/link'
 import { ArrowLeft, Plus } from 'lucide-react'
+import AuthGuard from '@/components/AuthGuard'
 import ReactFlow, {
   Node,
   Edge,
@@ -17,7 +18,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
-export default function RelationshipsPage() {
+function RelationshipsContent() {
   const params = useParams()
   const campaignId = params.id as string
   const [characters, setCharacters] = useState<Character[]>([])
@@ -257,5 +258,14 @@ export default function RelationshipsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+
+export default function RelationshipsPage() {
+  return (
+    <AuthGuard>
+      <RelationshipsContent />
+    </AuthGuard>
   )
 }

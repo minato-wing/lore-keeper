@@ -20,12 +20,20 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         })
         if (error) throw error
-        alert('確認メールを送信しました。メールを確認してください。')
+        
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          setError('このメールアドレスは既に登録されています。')
+        } else {
+          router.push('/auth/confirm')
+        }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -34,12 +42,19 @@ export default function LoginPage() {
         if (error) throw error
         
         if (data.session) {
-          localStorage.setItem('supabase_token', data.session.access_token)
-          router.push('/campaigns')
+          // Session is automatically stored by Supabase client
+          // Force a hard navigation to ensure middleware picks up the session
+          window.location.href = '/campaigns'
         }
       }
     } catch (error: any) {
-      setError(error.message)
+      if (error.message.includes('Email not confirmed')) {
+        setError('メールアドレスが確認されていません。確認メールをチェックしてください。')
+      } else if (error.message.includes('Invalid login credentials')) {
+        setError('メールアドレスまたはパスワードが正しくありません。')
+      } else {
+        setError(error.message)
+      }
     } finally {
       setLoading(false)
     }

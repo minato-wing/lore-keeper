@@ -10,9 +10,10 @@ var Client *supabase.Client
 
 func InitSupabase() error {
 	url := os.Getenv("SUPABASE_URL")
-	key := os.Getenv("SUPABASE_KEY")
+	// Use service role key for backend operations
+	serviceKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-	client, err := supabase.NewClient(url, key, nil)
+	client, err := supabase.NewClient(url, serviceKey, nil)
 	if err != nil {
 		return err
 	}

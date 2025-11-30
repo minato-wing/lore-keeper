@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -24,11 +25,20 @@ func main() {
 
 	r := gin.Default()
 
+	// CORS configuration
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowOriginFunc: func(origin string) bool {
+			// Allow localhost and Gitpod URLs
+			return origin == "http://localhost:3000" ||
+				origin == "http://localhost:3001" ||
+				strings.HasSuffix(origin, ".gitpod.io") ||
+				strings.Contains(origin, "gitpod.dev")
+		},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
+		MaxAge:           12 * 3600, // 12 hours
 	}))
 
 	campaignHandler := handlers.NewCampaignHandler()
@@ -114,10 +124,10 @@ func main() {
 					var loreEntries []struct {
 						Content string `json:"content"`
 					}
-					_, err := database.Client.DB.From("lore_entries").
+					_, err := database.Client.From("lore_entries").
 						Select("content", "", false).
 						Eq("campaign_id", req.CampaignID).
-						Execute(&loreEntries)
+						ExecuteTo(&loreEntries)
 
 					if err != nil {
 						c.JSON(500, gin.H{"error": err.Error()})

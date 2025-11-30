@@ -5,8 +5,9 @@ import { useParams } from 'next/navigation'
 import { api, Campaign, Character } from '@/lib/api'
 import Link from 'next/link'
 import { ArrowLeft, Users, BookOpen, Network } from 'lucide-react'
+import AuthGuard from '@/components/AuthGuard'
 
-export default function CampaignDetailPage() {
+function CampaignDetailContent() {
   const params = useParams()
   const campaignId = params.id as string
   const [campaign, setCampaign] = useState<Campaign | null>(null)
@@ -108,5 +109,13 @@ export default function CampaignDetailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CampaignDetailPage() {
+  return (
+    <AuthGuard>
+      <CampaignDetailContent />
+    </AuthGuard>
   )
 }

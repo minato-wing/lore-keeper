@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { api, Campaign } from '@/lib/api'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import AuthGuard from '@/components/AuthGuard'
 
-export default function CampaignsPage() {
+function CampaignsContent() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -130,5 +131,13 @@ export default function CampaignsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function CampaignsPage() {
+  return (
+    <AuthGuard>
+      <CampaignsContent />
+    </AuthGuard>
   )
 }

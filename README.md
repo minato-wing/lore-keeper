@@ -46,8 +46,35 @@ TRPGのGMや創作・小説執筆者向けに、AIが「壁打ち相手」兼「
 ### 1. Supabaseプロジェクトのセットアップ
 
 1. [Supabase](https://supabase.com)でプロジェクトを作成
-2. SQL Editorで `init.sql` を実行してテーブルを作成
-3. プロジェクトのURL、Anon Key、Service Role Keyを取得
+2. SQL Editorで `database/init.sql` を実行してテーブルを作成
+3. プロジェクトの認証情報を取得:
+   - **Project URL**: Settings > API > Project URL
+   - **Publishable Key** (フロントエンド用): Settings > API > Project API keys > anon public
+   - **Service Role Key** (バックエンド用): Settings > API > Project API keys > service_role (⚠️ 秘密鍵として扱う)
+
+4. **メール送信の設定** (重要):
+   
+   **開発環境:**
+   - Supabaseの組み込みメール機能が自動的に有効
+   - 1時間あたり4通まで送信可能
+   - Dashboard > Authentication > Users でメール確認リンクを確認可能
+   
+   **本番環境 (推奨: Resend):**
+   1. [Resend](https://resend.com)でアカウント作成（無料枠: 月3,000通）
+   2. API Keyを取得
+   3. Supabase Dashboard > Project Settings > Auth > SMTP Settings で設定:
+      ```
+      Enable Custom SMTP: ON
+      Host: smtp.resend.com
+      Port: 587
+      Username: resend
+      Password: re_xxxxxxxxxxxxx (Resend API Key)
+      Sender email: noreply@yourdomain.com
+      Sender name: Lore Keeper AI
+      ```
+   4. Authentication > Email Templates でテンプレートをカスタマイズ
+   
+   詳細は `SUPABASE_EMAIL_SETUP.md` と `email-templates.sql` を参照してください。
 
 ### 2. バックエンドのセットアップ
 
@@ -60,8 +87,7 @@ cp .env.example .env
 `.env` の内容:
 ```
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-anon-key
-SUPABASE_SERVICE_KEY=your-service-role-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 PORT=8080
 ```
@@ -71,6 +97,15 @@ PORT=8080
 go mod download
 go run cmd/api/main.go
 ```
+
+**CORS設定:**
+バックエンドは以下のオリジンを自動的に許可します:
+- `http://localhost:3000`
+- `http://localhost:3001`
+- `*.gitpod.io`
+- `*gitpod.dev`
+
+追加のオリジンを許可する場合は、`backend/cmd/api/main.go` の `AllowOriginFunc` を編集してください。
 
 ### 3. フロントエンドのセットアップ
 
@@ -83,7 +118,7 @@ cp .env.local.example .env.local
 `.env.local` の内容:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
@@ -102,7 +137,7 @@ pnpm dev
 
 ```
 lore-keeper/
-├── backend/
+├── backend/              # Go + Gin バックエンド
 │   ├── cmd/api/          # エントリーポイント
 │   ├── internal/
 │   │   ├── handlers/     # HTTPハンドラー
@@ -110,17 +145,27 @@ lore-keeper/
 │   │   ├── services/     # ビジネスロジック
 │   │   ├── database/     # DB接続
 │   │   └── middleware/   # 認証など
+│   ├── pkg/utils/        # ユーティリティ
 │   └── go.mod
-├── frontend/
+├── frontend/             # Next.js + TypeScript フロントエンド
 │   ├── app/              # Next.js App Router
 │   │   ├── campaigns/    # キャンペーン管理
-│   │   └── login/        # 認証
+│   │   ├── auth/         # 認証コールバック
+│   │   └── login/        # ログイン
 │   ├── lib/              # ユーティリティ
 │   └── components/       # 共通コンポーネント
-├── init.sql              # データベース初期化
-├── er.md                 # ER図
-└── plan.md               # プロジェクト計画
-
+├── database/             # データベース関連
+│   ├── init.sql          # データベース初期化
+│   └── email-templates.sql # メールテンプレート
+├── docs/                 # ドキュメント
+│   ├── README.md         # ドキュメント一覧
+│   ├── QUICK_START.md    # クイックスタート
+│   ├── plan.md           # プロジェクト計画
+│   ├── er.md             # ER図
+│   └── ...               # その他のドキュメント
+├── scripts/              # ユーティリティスクリプト
+│   └── test-cors.sh      # CORSテストスクリプト
+└── README.md             # このファイル
 ```
 
 ## API エンドポイント
@@ -176,6 +221,27 @@ lore-keeper/
   - [ ] UIブラッシュアップ
   - [ ] パフォーマンス最適化
   - [ ] テストユーザー募集
+
+## 📚 ドキュメント
+
+詳細なドキュメントは `docs/` ディレクトリにあります：
+
+### セットアップガイド
+- [QUICK_START.md](docs/QUICK_START.md) - クイックスタートガイド
+- [SUPABASE_SETUP_CHECKLIST.md](docs/SUPABASE_SETUP_CHECKLIST.md) - Supabase設定チェックリスト
+- [SUPABASE_EMAIL_SETUP.md](docs/SUPABASE_EMAIL_SETUP.md) - メール送信設定ガイド
+
+### 技術ドキュメント
+- [plan.md](docs/plan.md) - プロジェクト計画
+- [er.md](docs/er.md) - ER図
+- [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) - 実装状況
+
+### トラブルシューティング
+- [AUTH_FIX_SUMMARY.md](docs/AUTH_FIX_SUMMARY.md) - 認証修正サマリー
+- [CORS_FIX_SUMMARY.md](docs/CORS_FIX_SUMMARY.md) - CORS修正サマリー
+- [USER_ID_AUTH_FIX.md](docs/USER_ID_AUTH_FIX.md) - user_id認証修正サマリー
+- [CONTEXT_VALUE_FIX.md](docs/CONTEXT_VALUE_FIX.md) - Context値取得の修正
+- [EMAIL_IMPLEMENTATION_SUMMARY.md](docs/EMAIL_IMPLEMENTATION_SUMMARY.md) - メール実装サマリー
 
 ## ライセンス
 

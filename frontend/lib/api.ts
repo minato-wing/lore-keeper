@@ -40,8 +40,12 @@ export interface LoreEntry {
   updated_at: string
 }
 
+import { supabase } from './supabase'
+
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('supabase_token')
+  // Get current session from Supabase
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
   
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
