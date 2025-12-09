@@ -1,16 +1,18 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import type { NextRequest } from "next/server";
+import { auth0 } from "./lib/auth0";
 
-export function middleware(request: NextRequest) {
-  // This middleware is now simplified - authentication is handled client-side
-  // We only prevent access to protected routes if there's no auth token in localStorage
-  // The actual session validation happens on the client
-  
-  return NextResponse.next()
+export async function middleware(request: NextRequest) {
+  return await auth0.middleware(request);
 }
 
 export const config = {
   matcher: [
-    '/campaigns/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 }
